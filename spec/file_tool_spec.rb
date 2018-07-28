@@ -96,9 +96,6 @@ RSpec.describe 'FileTool', :slow do
       expect(file.stderr).to eq('')
       expect(file.status).to eq(0)
     end
-
-    xit 'can download and verify md5' do
-    end
   end
 
   context '#find' do

@@ -34,7 +34,6 @@ class FileTool < Thor
   method_option :new, aliases: '-n', desc: 'start download in a new process',
                       type: :boolean
   method_option :dir, aliases: '-d', desc: 'download directory'
-  method_option :md5, aliases: '-m', desc: 'md5 to match'
   # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
   def download(source)
     Assert.exist(source)
@@ -45,13 +44,10 @@ class FileTool < Thor
       # "cmd /k" leaves the cmd window open but "&& exit" will close it if the
       # ruby command exits with nonzero. So we stay open on failures to diagnose
       # things like exceptions being raised.
-      digest_string = options.md5 ? "-m #{options.md5}" : ''
       system "start \"#{target}\" cmd /k " \
-             "\"ruby #{__FILE__} download #{source} -d #{dir}" \
-             " #{digest_string} && exit\""
+             "\"ruby #{__FILE__} download #{source} -d #{dir} && exit\""
     else
       FileHelper.download(source, dir: dir, progress: true)
-      Assert.equal(md5(source), options.md5) if options.md5
     end
   end
   # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
