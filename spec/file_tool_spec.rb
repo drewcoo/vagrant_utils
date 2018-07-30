@@ -1,6 +1,16 @@
 require 'spec_helper'
 require File.expand_path('file_tool_wrapper', __dir__)
 
+# rubocop:disable Style/MutableConstant
+FILE_VM_DATA_JSON = File.expand_path('vm_data.json', __dir__)
+FILE_TMP_DUMMY_TXT = File.expand_path('..\tmp\dummy.txt', __dir__)
+
+URL_DOWNLOAD_DUMMY = 'https://www.iana.org/_img/2013.1/iana-logo-header.svg'
+URL_VM_FOR_MD5_CHECK = 'https://az792536.vo.msecnd.net/vms/md5/' \
+                       'VMBuild_20180102/IE11.Win81.HyperV.zip.md5.txt'
+MD5_FOR_MD5_CHECK = 'A3ECD1D4E53C5D11F162A18331D429C6'
+# rubocop:enable Style/MutableConstant
+
 def entry_count(output)
   output.lines.count { |line| line.match(/^browser\:/) }
 end
@@ -23,19 +33,19 @@ end
 # rubocop:disable Metrics/BlockLength
 RSpec.describe 'FileTool', :slow do
   let(:file) do
-    ENV['VM_DATA'] = File.expand_path('vm_data.json', __dir__)
+    ENV['VM_DATA'] = FILE_VM_DATA_JSON
     FileToolWrapper.new
   end
 
   let(:dummy_source) do
-    source = File.expand_path('vm_data.json', __dir__)
-    target = File.expand_path('..\tmp\dummy.txt', __dir__)
+    source = FILE_VM_DATA_JSON
+    target = FILE_TMP_DUMMY_TXT
     FileUtils.cp(source, target)
     @created_dummy_source = target
   end
 
   let(:download_dummy) do
-    url = 'https://www.iana.org/_img/2013.1/iana-logo-header.svg'
+    url = URL_DOWNLOAD_DUMMY
     basename = url.split('/').last
     @created_download_dummy = File.expand_path("../tmp/download/#{basename}",
                                                __dir__)
@@ -47,11 +57,20 @@ RSpec.describe 'FileTool', :slow do
                                              __dir__)
   end
 
+  let(:zipped_file) do
+    @zipped_file = File.expand_path('..\tmp\vm_data.zip', __dir__)
+    FileUtils.cp(FILE_VM_DATA_JSON, @zipped_file)
+    @unzipped_file = File.expand_path('..\tmp\vm_data\vm_data.json', __dir__)
+    @unzipped_dir = File.expand_path('../tmp/vmdata', __dir__)
+    @zipped_file
+  end
+
   after do
     [@created_dummy_source, @created_download_dummy,
-     @created_dummy_target].each do |f|
+     @created_dummy_target, @zipped_file].each do |f|
       File.delete(f) if !f.nil? && File.exist?(f)
     end
+    FileUtils.rm_rf(@unzipped_dir) unless @unzipped_dir.nil?
   end
 
   context '#copy' do
@@ -119,10 +138,8 @@ RSpec.describe 'FileTool', :slow do
     end
 
     it 'can find by md5_url' do
-      # rubocop:disable Metrics/LineLength
-      file.find '--md5_url https://az792536.vo.msecnd.net/vms/md5/VMBuild_20180102/IE11.Win81.HyperV.zip.md5.txt'
-      expect(entry_value(file.stdout, 'md5')).to eq('A3ECD1D4E53C5D11F162A18331D429C6')
-      # rubocop:enable Metrics/LineLength
+      file.find "--md5_url #{URL_VM_FOR_MD5_CHECK}"
+      expect(entry_value(file.stdout, 'md5')).to eq(MD5_FOR_MD5_CHECK)
     end
 
     xit 'can find by name' do
@@ -145,12 +162,23 @@ RSpec.describe 'FileTool', :slow do
   end
 
   context '#md5' do
-    # need fake file .json w/ md5 matching a file for this
+    it 'can find an md5' do
+      file.download download_dummy
+      file.md5 @created_download_dummy
+      expect(file.stderr).to eq('')
+      expect(file.stdout).to match('426B3AC01D3584C820F3B7F5985D6623')
+      expect(file.status).to eq(0)
+    end
+
+    xit 'can verify md5 against data' do
+    end
   end
 
   context '#unzip' do
-    # need a zipped file and something known about its unzipped self
-    # probably a fake file .json w/ an md5 for the unzipped file
+    it 'can unzip a file' do
+      file.unzip zipped_file
+      expect(FileUtils.identical?(@unzipped_file, FILE_VM_DATA_JSON)).to be true
+    end
   end
 
   context '#values' do

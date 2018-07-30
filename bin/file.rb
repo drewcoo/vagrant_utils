@@ -34,23 +34,23 @@ class FileTool < Thor
   method_option :new, aliases: '-n', desc: 'start download in a new process',
                       type: :boolean
   method_option :dir, aliases: '-d', desc: 'download directory'
-  # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
+  # rubocop:disable Metrics/AbcSize, Metrics/MethodLength, Lint/UnneededCopDisableDirective, Metrics/LineLength
   def download(source)
     Assert.exist(source)
     dir = options.dir || DEFAULT_DOWNLOAD_DIR
     target = source.split('/').last
     Assert.not_exist(full_path(dir, target))
     if options.new
-      # "cmd /k" leaves the cmd window open but "&& exit" will close it if the
-      # ruby command exits with nonzero. So we stay open on failures to diagnose
-      # things like exceptions being raised.
+      # "cmd /k" leaves the cmd window open but "&& exit" will close it
+      # if the ruby command exits with nonzero. So we stay open on failures
+      # to diagnose things like exceptions being raised.
       system "start \"#{target}\" cmd /k " \
              "\"ruby #{__FILE__} download #{source} -d #{dir} && exit\""
     else
       FileHelper.download(source, dir: dir, progress: true)
     end
   end
-  # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
+  # rubocop:enable Metrics/AbcSize, Metrics/MethodLength, Lint/UnneededCopDisableDirective, Metrics/LineLength
 
   desc 'find', 'take a bunch of args or none at all'
   method_option :browser
@@ -77,17 +77,23 @@ class FileTool < Thor
   end
 
   desc 'md5', 'hash of file'
+  method_option :verify, aliases: '-v', desc: 'check against md5s in vm data',
+                         type: :boolean
   def md5(source)
     Assert.exist(source)
     actual = FileHelper.md5(source, progress: true)
-    expected = vm_data.find(name: File.basename(source)).first.md5
-    Assert.equal(actual, expected)
+    if options.verify
+      expected = vm_data.find(name: File.basename(source)).first.md5
+      Assert.equal(actual, expected)
+    end
     puts actual
   end
 
   desc 'unzip <source_file> <target_dir>', 'unzip file to target location'
-  def unzip(source, target)
+  def unzip(source, target = nil)
     Assert.exist(source)
+    # No target given, unzip foo.zip into directory foo.
+    target ||= source.split('.')[0..-2].join('.')
     Assert.not_exist(target)
     FileHelper.unzip(source, target, progress: true)
   end

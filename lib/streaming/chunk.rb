@@ -14,5 +14,11 @@ class Chunk
   def next
     @offset += @size
     @offset = @total if @offset > @total
+    # return the offset to make code more succinct
+    @offset
+  end
+
+  def finished?
+    @offset == @total
   end
 end

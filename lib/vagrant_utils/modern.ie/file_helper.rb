@@ -1,5 +1,8 @@
+# lib dir
+$LOAD_PATH.unshift File.expand_path('..\..', __dir__)
+require 'streaming'
+
 $LOAD_PATH.unshift File.expand_path(__dir__)
-require 'chunk'
 require 'fileutils'
 require 'net/http'
 require 'progressbar'
@@ -20,102 +23,65 @@ require 'zip'
 # rubyzip do buffered IO and jam progress bar progress into it.
 #
 class FileHelper
-  # rubocop:disable Metrics/MethodLength
+  #
+  # can SocketError if connection dropped
+  #
+  # If new download, do this.
+  #
+  # But if continue stopped download,
+  # start progress the same
+  # get size of local file
+  # set chunk to that
+  # start download at that offset
+  # append to local file
+  #
   def self.copy(source, target, progress: false)
-    chunk = Chunk.new(size: File.size(source))
+    reader = Streaming::Reader::General.new(source)
+    reader.add_writer(Streaming::Writer::LocalFile.new(target))
     if progress
-      bar = ProgressBar.create(title: "#{source} -> #{target}",
-                               total: chunk.total)
+      bar = Streaming::Writer::Progress.new(title: "#{source} -> #{target}")
+      reader.add_writer(bar)
     end
-    File.open(source, 'rb') do |reader|
-      File.open(target, 'wb') do |writer|
-        until reader.eof?
-          writer.write reader.read(chunk.size)
-          bar.progress = chunk.offset if progress
-          chunk.next
-        end
-      end
-    end
-    bar.finish if progress
+    reader.write
   end
-  # rubocop:enable Metrics/MethodLength
 
-  # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
-  def self.download(source, target: nil, dir: nil, progress: false)
-    uri = URI(source)
-    target = uri.path.split('/').last if target.nil?
+  def self.download(source, dir:, progress: false, target: nil)
+    # auto-generate target if none given
+    target ||= URI(source).path.split('/').last
+    target = [dir, target].join('/').gsub('//', '/')
+    # and create the dir or we might error later
     FileUtils.mkdir_p dir
-    target = [dir, target].join('/').gsub('//', '/') unless dir.nil?
-    if progress
-      bar = ProgressBar.create(title: target,
-                               total: http_file_size(source))
-    end
-    # can SocketError if connection dropped
-    #
-    # If new download, do this.
-    #
-    # But if continue stopped download,
-    # start progress the same
-    # get size of local file
-    # set chunk to that
-    # start download at that offset
-    # append to local file
-    #
-
-    Net::HTTP.start(uri.host) do |http|
-      File.open(target, 'wb') do |file|
-        http.get(uri.path) do |chunk|
-          file.write chunk
-          bar.progress += chunk.length if progress
-        end
-      end
-    end
-    bar.finish if progress
+    # now it's just the same as a copy
+    copy(source, target, progress: progress)
   end
-  # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
 
-  # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
   def self.md5(path, progress: false)
-    require 'digest'
-    result = Digest::MD5.new
-    chunk = Chunk.new(size: File.size(path))
+    reader = Streaming::Reader::General.new(path)
+    reader.add_writer(md5 = Streaming::Writer::MD5.new)
     if progress
-      bar = ProgressBar.create(title: 'md5 digest', total: chunk.total)
+      reader.add_writer(Streaming::Writer::Progress.new(title: 'md5 digest'))
     end
-    File.open(path, 'rb') do |reader|
-      until reader.eof?
-        result.update reader.read(chunk.size)
-        bar.progress = chunk.offset if progress
-        chunk.next
-      end
-    end
-    bar.finish if progress
-    # MSFT passes us MD5 in upcase. Match it.
-    result.to_s.upcase
+    reader.write
+    md5.value
   end
-  # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
 
-  def self.unzip(source_file, target_dir = nil)
+  def self.unzip(source, target_dir = nil, progress: false)
     # file foo.bar.baz.zip => dir foo.bar.baz
     target_dir ||= source_file.split('.')[0..-2].join('.')
     FileUtils.mkdir_p(target_dir)
 
-    Zip::File.open(source_file) do |zip_file|
-      zip_file.each do |file|
-        path = File.join(target_dir, file.name)
-        zip_file.extract(file, path) unless File.exist?(path)
-      end
+    reader = Streaming::Reader::Zip.new(source)
+    reader.add_writer(Streaming::Writer::LocalFile.new)
+    if progress
+      reader.add_writer(Streaming::Writer::Progress.new(title: source))
     end
+    reader.write
   end
 
   def self.http_file_size(source)
-    result = 0
-    uri = URI(source)
-    Net::HTTP.start(uri.host) do |http|
-      response = http.request_head(uri.path)
-      result = response['content-length'].to_i
-      raise IOError, response.inspect unless response.is_a? Net::HTTPSuccess
-    end
+    reader = Streaming::Reader::General.new(source)
+    result = reader.size
+    reader.close
     result
   end
   private_class_method :http_file_size
