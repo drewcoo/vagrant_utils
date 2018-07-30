@@ -6,6 +6,18 @@ require 'ruby-prof'
 # everything else is silly text formatting that should be its own class
 #
 module Utils
+  # Keeps retrying with longer sleeps until it eventually raises
+  # Takes over 4 minutes.
+  SLEEP_INCREMENT = 0.1
+  def retry_with_backoff
+    sleep_number = -SLEEP_INCREMENT
+    loop do
+      raise 'Too long to contact host' if sleep_number >= 5
+      sleep sleep_number += SLEEP_INCREMENT
+      yield self
+    end
+  end
+
   # rubocop:disable Metrics/MethodLength
   def timethis(label: nil, times: 1, &block)
     RubyProf.start

@@ -1,4 +1,4 @@
-$LOAD_PATH.unshift File.expand_path(__dir__)
+$LOAD_PATH.unshift(File.expand_path(__dir__))
 require 'read_only_element'
 # the next are required only for md5 lookup
 require 'net/http'

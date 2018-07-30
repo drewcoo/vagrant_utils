@@ -1,5 +1,7 @@
 require 'httpclient'
 require 'reader/biological_parent'
+$LOAD_PATH.unshift(File.expand_path('../lib'), __dir__)
+require 'utils'
 
 module Streaming
   module Reader
@@ -7,6 +9,13 @@ module Streaming
     # Reads remote file over http.
     #
     class RemoteURI < BiologicalParent
+      include Utils
+
+      def initialize(*args, &block)
+        @size = nil
+        super
+      end
+
       def exist?
         Net::HTTP.start(@name.host) do |http|
           return http.request_head(@name.path).is_a? Net::HTTPSuccess
@@ -21,15 +30,21 @@ module Streaming
         @handle = conn.pop.content
       end
 
+      # rubocop:disable Metrics/MethodLength
       def size
-        return @size unless @size.nil?
-        Net::HTTP.start(@name.host) do |http|
-          response = http.request_head(@name.path)
-          @size = response['content-length'].to_i
-          raise IOError, response.inspect unless response.is_a? Net::HTTPSuccess
+        retry_with_backoff do
+          break @size unless @size.nil?
+          Net::HTTP.start(@name.host) do |http|
+            response = http.request_head(@name.path)
+            unless response.is_a? Net::HTTPSuccess
+              raise IOError, response.inspect
+            end
+            content_length = response['content-length']
+            @size = content_length.to_i unless content_length.nil?
+          end
         end
-        @size
       end
+      # rubocop:enable Metrics/MethodLength
     end
   end
 end

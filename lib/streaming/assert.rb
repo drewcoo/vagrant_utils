@@ -1,6 +1,4 @@
-$LOAD_PATH.unshift File.expand_path __dir__
 require 'colorize'
-require 'file_helper'
 
 #
 # A bunch of assertions that, if they fail, will exit with

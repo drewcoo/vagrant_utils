@@ -1,9 +1,7 @@
 #!/usr/bin/env ruby
-$LOAD_PATH.unshift File.expand_path '../lib/vagrant_utils/modern.ie', __dir__
-require 'assert'
-require 'collection'
+$LOAD_PATH.unshift(File.expand_path('../lib', __dir__))
 require 'file_helper'
-require 'image'
+require 'vagrant_utils/modern.ie/collection'
 
 require 'rubygems'
 require 'thor'
@@ -87,6 +85,13 @@ class FileTool < Thor
       Assert.equal(actual, expected)
     end
     puts actual
+  end
+
+  desc 'size <file>', 'tell file size'
+  def size(source)
+    Assert.exist(source)
+    size = FileHelper.http_file_size(source)
+    puts size
   end
 
   desc 'unzip <source_file> <target_dir>', 'unzip file to target location'

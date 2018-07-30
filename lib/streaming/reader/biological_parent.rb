@@ -5,11 +5,29 @@ module Streaming
     # through another class that's just pretending.
     #
     class BiologicalParent
-      def initialize(name)
+      #
+      # The optinal block passed in here allows this calling convention:
+      #
+      # Streaming::Reader::General.new(source) do |reader|
+      #    reader.add_writer(Streaming::Writer::LocalFile.new(target))
+      # end
+      #
+      # Otherwise it should be used like this:
+      #
+      # reader = Streaming::Reader::General.new(source)
+      # reader.add_writer(Streaming::Writer::LocalFile.new(target))
+      # reader.write
+      # reader.close
+      #
+      def initialize(name, &block)
         @writers = []
         @name = name
         raise "File \"#{uri}\" does not exist!" unless exist?
         open
+        return if block.nil?
+        yield self
+        write
+        close
       end
 
       def read(size)
@@ -22,6 +40,10 @@ module Streaming
       end
 
       def write
+        # For some things (like checking file size of URIs) we want to open
+        # the file and call some method on the reader but not actually
+        # slurp the file.
+        return if @writers.empty?
         chunk = Chunk.new(size: size)
         @writers.each(&:open)
         until chunk.finished?
@@ -29,11 +51,10 @@ module Streaming
           @writers.each { |writer| writer.write(chunk, data) }
           chunk.next
         end
-        @writers.each(&:close)
-        close
       end
 
       def close
+        @writers.each(&:close)
         @handle.close
       end
     end

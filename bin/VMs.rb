@@ -6,15 +6,14 @@
 # This is just a place to play with VM collections and downloading
 # before we get the non-library code into a command line tool.
 #
-$LOAD_PATH.unshift File.expand_path('../lib/vagrant_utils/modern.ie', __dir__)
-require 'collection'
-require 'image'
+$LOAD_PATH.unshift(File.expand_path('../lib', __dir__))
 require 'utils'
 # rubocop:disable Style/MixinUsage
 include Utils
 # rubocop:enable Style/MixinUsage
+require 'vagrant_utils/modern.ie/collection'
 
-$LOAD_PATH.unshift File.expand_path(__dir__)
+$LOAD_PATH.unshift(File.expand_path(__dir__))
 require 'file'
 
 data = Collection.new(type: Image)

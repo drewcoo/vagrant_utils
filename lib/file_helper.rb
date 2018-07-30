@@ -1,8 +1,8 @@
-# lib dir
-$LOAD_PATH.unshift File.expand_path('..\..', __dir__)
+# all of the streaming file-related libs
+$LOAD_PATH.unshift(File.expand_path(__dir__))
 require 'streaming'
 
-$LOAD_PATH.unshift File.expand_path(__dir__)
+# and the other things
 require 'fileutils'
 require 'net/http'
 require 'progressbar'
@@ -36,13 +36,13 @@ class FileHelper
   # append to local file
   #
   def self.copy(source, target, progress: false)
-    reader = Streaming::Reader::General.new(source)
-    reader.add_writer(Streaming::Writer::LocalFile.new(target))
-    if progress
-      bar = Streaming::Writer::Progress.new(title: "#{source} -> #{target}")
-      reader.add_writer(bar)
+    Streaming::Reader::General.new(source) do |reader|
+      reader.add_writer(Streaming::Writer::LocalFile.new(target))
+      if progress
+        bar = Streaming::Writer::Progress.new(title: "#{source} -> #{target}")
+        reader.add_writer(bar)
+      end
     end
-    reader.write
   end
 
   def self.download(source, dir:, progress: false, target: nil)
@@ -56,12 +56,13 @@ class FileHelper
   end
 
   def self.md5(path, progress: false)
-    reader = Streaming::Reader::General.new(path)
-    reader.add_writer(md5 = Streaming::Writer::MD5.new)
-    if progress
-      reader.add_writer(Streaming::Writer::Progress.new(title: 'md5 digest'))
+    md5 = Streaming::Writer::MD5.new
+    Streaming::Reader::General.new(path) do |reader|
+      reader.add_writer(md5)
+      if progress
+        reader.add_writer(Streaming::Writer::Progress.new(title: 'md5 digest'))
+      end
     end
-    reader.write
     md5.value
   end
 
@@ -70,19 +71,19 @@ class FileHelper
     target_dir ||= source_file.split('.')[0..-2].join('.')
     FileUtils.mkdir_p(target_dir)
 
-    reader = Streaming::Reader::Zip.new(source)
-    reader.add_writer(Streaming::Writer::LocalFile.new)
-    if progress
-      reader.add_writer(Streaming::Writer::Progress.new(title: source))
+    Streaming::Reader::Zip.new(source) do |reader|
+      reader.add_writer(Streaming::Writer::LocalFile.new)
+      if progress
+        reader.add_writer(Streaming::Writer::Progress.new(title: source))
+      end
     end
-    reader.write
   end
 
   def self.http_file_size(source)
-    reader = Streaming::Reader::General.new(source)
-    result = reader.size
-    reader.close
+    result = nil
+    Streaming::Reader::General.new(source) do |reader|
+      result = reader.size
+    end
     result
   end
-  private_class_method :http_file_size
 end

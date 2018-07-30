@@ -1,4 +1,4 @@
-$LOAD_PATH.unshift File.expand_path('streaming', __dir__)
+$LOAD_PATH.unshift(File.expand_path('streaming', __dir__))
 
 %w[biological_parent general local_file remote_uri zip.rb].each do |file|
   require "reader/#{file}"
@@ -8,4 +8,5 @@ end
   require "writer/#{file}"
 end
 
+require 'assert'
 require 'chunk'
