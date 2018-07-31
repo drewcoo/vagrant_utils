@@ -4,7 +4,7 @@ $LOAD_PATH.unshift(File.expand_path('streaming', __dir__))
   require "source/#{file}"
 end
 
-%w[base local_file md5 progress].each do |file|
+%w[base digest local_file progress].each do |file|
   require "writer/#{file}"
 end
 

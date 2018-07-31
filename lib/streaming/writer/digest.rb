@@ -6,9 +6,17 @@ module Streaming
     #
     # Gets MD5 hash of file read.
     #
-    class MD5 < Base
-      def initialize
-        @value = Digest::MD5.new
+    class Digest < Base
+      def initialize(algo = :MD5)
+        @value = case algo
+                 when :MD5
+                   ::Digest::MD5.new
+                 when :SHA256
+                   ::Digest::SHA256.new
+                 else
+                   # Should add others. Add automagical determination.
+                   raise "Unknown digest type: #{algo}"
+                 end
         super
       end
 

@@ -29,8 +29,7 @@ class FileHelper
     Streaming::Reader.new(source) do |reader|
       reader.add_writer(Streaming::Writer::LocalFile.new(target))
       if progress_text
-        bar = Streaming::Writer::Progress.new(title: progress_text)
-        reader.add_writer(bar)
+        reader.add_writer(Streaming::Writer::Progress.new(title: progress_text))
       end
     end
   end
@@ -57,15 +56,15 @@ class FileHelper
     common_worker(source, target, progress_text: progress_text)
   end
 
-  def self.md5(path, progress: false)
-    md5 = Streaming::Writer::MD5.new
-    Streaming::Reader.new(path) do |reader|
-      reader.add_writer(md5)
+  def self.md5(source, progress: false)
+    digest = Streaming::Writer::Digest.new(:MD5)
+    Streaming::Reader.new(source) do |reader|
+      reader.add_writer(digest)
       if progress
         reader.add_writer(Streaming::Writer::Progress.new(title: 'md5 digest'))
       end
     end
-    md5.value
+    digest.value
   end
 
   def self.unzip(source, target = nil, progress: false)
