@@ -1,14 +1,14 @@
 require 'httpclient'
-require 'reader/biological_parent'
+require 'source/base_source'
 $LOAD_PATH.unshift(File.expand_path('../lib'), __dir__)
 require 'utils'
 
 module Streaming
-  module Reader
+  module Source
     #
     # Reads remote file over http.
     #
-    class RemoteURI < BiologicalParent
+    class RemoteURI < BaseSource
       include Utils
 
       def initialize(*args, &block)

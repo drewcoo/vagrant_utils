@@ -3,6 +3,7 @@ require File.expand_path('file_tool_wrapper', __dir__)
 
 # rubocop:disable Style/MutableConstant
 FILE_VM_DATA_JSON = File.expand_path('vm_data.json', __dir__)
+FILE_VM_DATA_ZIP = File.expand_path('vm_data.zip', __dir__)
 FILE_TMP_DUMMY_TXT = File.expand_path('..\tmp\dummy.txt', __dir__)
 
 URL_DOWNLOAD_DUMMY = 'https://www.iana.org/_img/2013.1/iana-logo-header.svg'
@@ -58,10 +59,11 @@ RSpec.describe 'FileTool', :slow do
   end
 
   let(:zipped_file) do
-    @zipped_file = File.expand_path('..\tmp\vm_data.zip', __dir__)
-    FileUtils.cp(FILE_VM_DATA_JSON, @zipped_file)
-    @unzipped_file = File.expand_path('..\tmp\vm_data\vm_data.json', __dir__)
-    @unzipped_dir = File.expand_path('../tmp/vmdata', __dir__)
+    @zipped_file = File.expand_path('../tmp/vm_data.zip', __dir__)
+    @unzipped_file = File.expand_path('../tmp/vm_data/vm_data.json', __dir__)
+    @unzipped_dir = File.expand_path('../tmp/vm_data', __dir__)
+    FileUtils.mkdir_p(File.expand_path('../tmp', __dir__))
+    FileUtils.cp(FILE_VM_DATA_ZIP, @zipped_file)
     @zipped_file
   end
 
@@ -177,6 +179,7 @@ RSpec.describe 'FileTool', :slow do
   context '#unzip' do
     it 'can unzip a file' do
       file.unzip zipped_file
+      expect(file.stderr).to eq('')
       expect(FileUtils.identical?(@unzipped_file, FILE_VM_DATA_JSON)).to be true
     end
   end

@@ -1,11 +1,11 @@
-require 'reader/biological_parent'
+require 'source/base_source'
 
 module Streaming
-  module Reader
+  module Source
     #
     # Reads local files. Might work with netowrk shares. Haven't tried.
     #
-    class LocalFile < BiologicalParent
+    class LocalFile < BaseSource
       def exist?
         ::File.exist?(@name)
       end

@@ -1,7 +1,7 @@
 $LOAD_PATH.unshift(File.expand_path('streaming', __dir__))
 
-%w[biological_parent general local_file remote_uri zip.rb].each do |file|
-  require "reader/#{file}"
+%w[base_source local_file remote_uri zip_file].each do |file|
+  require "source/#{file}"
 end
 
 %w[base local_file md5 progress].each do |file|
@@ -10,3 +10,4 @@ end
 
 require 'assert'
 require 'chunk'
+require 'reader'

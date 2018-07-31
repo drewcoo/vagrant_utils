@@ -1,23 +1,23 @@
 module Streaming
-  module Reader
+  module Source
     #
-    # The real parent of the streaming readers even though they're all accessed
+    # The real parent of the streaming sources even though they're all accessed
     # through another class that's just pretending.
     #
-    class BiologicalParent
+    class BaseSource
       #
       # The optinal block passed in here allows this calling convention:
       #
-      # Streaming::Reader::General.new(source) do |reader|
-      #    reader.add_writer(Streaming::Writer::LocalFile.new(target))
+      # Streaming::Source::General.new(source) do |source|
+      #    source.add_writer(Streaming::Writer::LocalFile.new(target))
       # end
       #
       # Otherwise it should be used like this:
       #
-      # reader = Streaming::Reader::General.new(source)
-      # reader.add_writer(Streaming::Writer::LocalFile.new(target))
-      # reader.write
-      # reader.close
+      # source = Streaming::Source::General.new(source)
+      # source.add_writer(Streaming::Writer::LocalFile.new(target))
+      # source.write
+      # source.close
       #
       def initialize(name, &block)
         @writers = []
@@ -41,7 +41,7 @@ module Streaming
 
       def write
         # For some things (like checking file size of URIs) we want to open
-        # the file and call some method on the reader but not actually
+        # the file and call some method on the source but not actually
         # slurp the file.
         return if @writers.empty?
         chunk = Chunk.new(size: size)
