@@ -2,25 +2,15 @@
 $LOAD_PATH.unshift(File.expand_path(__dir__))
 require 'streaming'
 
-# and the other things
+# I should take this as a hint that I should move this
+# functionality elsewhere. Both are in download and
+# fileutils is in zip.
 require 'fileutils'
-require 'net/http'
-require 'progressbar'
 require 'uri'
-require 'zip'
 
 #
-# Maybe rubyzip to unzip these files?
-# https://github.com/rubyzip/rubyzip
-#
-# Verify Digest::MD5.hexdigest(file) once unzipped, I assume?
-# require 'digest' for that
-#
-
-#
-# File methods w/ progress where possible.
-# Not possible w/ zipfiles because it looked like way too much work to make
-# rubyzip do buffered IO and jam progress bar progress into it.
+# A helper class called only by the bin/file tool.
+# File actions with progress.
 #
 class FileHelper
   #
@@ -45,12 +35,17 @@ class FileHelper
     end
   end
 
-  def self.download(source, dir:, progress: false, target: nil)
+  def self.prep_for_download(source:, dir:, target:)
+    # create the dir or we might error later
+    FileUtils.mkdir_p dir
     # auto-generate target if none given
     target ||= URI(source).path.split('/').last
-    target = [dir, target].join('/').gsub('//', '/')
-    # and create the dir or we might error later
-    FileUtils.mkdir_p dir
+    [dir, target].join('/').gsub('//', '/')
+  end
+  private_class_method :prep_for_download
+
+  def self.download(source, dir:, progress: false, target: nil)
+    target = prep_for_download(source: source, dir: dir, target: target)
     # now it's just the same as a copy
     copy(source, target, progress: progress)
   end
