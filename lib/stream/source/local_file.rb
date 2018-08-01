@@ -1,6 +1,6 @@
 require 'source/base_source'
 
-module Streaming
+module Stream
   module Source
     #
     # Reads local files. Might work with netowrk shares. Haven't tried.

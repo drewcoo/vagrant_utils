@@ -2,7 +2,7 @@ require 'zip'
 require 'source/base_source'
 require 'writer/local_file'
 
-module Streaming
+module Stream
   module Source
     #
     # Reads a single file from a zipfile. Becuase that's my goal.
@@ -24,7 +24,7 @@ module Streaming
       end
 
       def add_writer(writer)
-        if writer.is_a?(Streaming::Writer::LocalFile)
+        if writer.is_a?(Stream::Writer::LocalFile)
           file = backslashes_to_slashes(@zip_buffer.first.name)
           dir = directory_name_from_file_name(@name)
           FileUtils.mkdir_p(dir)

@@ -27,7 +27,6 @@ class Assert
   def self.bail!(string)
     abort "ERROR: #{string}".colorize(:red)
   end
-  private_class_method :bail!
 
   def self.exist?(name)
     case uri = URI(name.tr('\\', '/'))

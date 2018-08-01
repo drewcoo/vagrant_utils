@@ -1,7 +1,7 @@
 require 'digest'
 require 'writer/base'
 
-module Streaming
+module Stream
   module Writer
     #
     # Gets MD5 hash of file read.

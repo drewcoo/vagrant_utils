@@ -1,6 +1,6 @@
-# all of the streaming file-related libs
+# all of the Stream file-related libs
 $LOAD_PATH.unshift(File.expand_path(__dir__))
-require 'streaming'
+require 'stream'
 
 # I should take this as a hint that I should move this
 # functionality elsewhere. Both are in download and
@@ -12,7 +12,7 @@ require 'uri'
 # A helper class called only by the bin/file tool.
 # File actions with progress.
 #
-class FileHelper
+class EasyFile
   #
   # can SocketError if connection dropped
   #
@@ -26,10 +26,10 @@ class FileHelper
   # append to local file
   #
   def self.common_worker(source, target, progress_text: nil)
-    Streaming::Reader.new(source) do |reader|
-      reader.add_writer(Streaming::Writer::LocalFile.new(target))
+    Stream::Reader.new(source) do |reader|
+      reader.add_writer(Stream::Writer::LocalFile.new(target))
       if progress_text
-        reader.add_writer(Streaming::Writer::Progress.new(title: progress_text))
+        reader.add_writer(Stream::Writer::Progress.new(title: progress_text))
       end
     end
   end
@@ -56,12 +56,14 @@ class FileHelper
     common_worker(source, target, progress_text: progress_text)
   end
 
-  def self.md5(source, progress: false)
-    digest = Streaming::Writer::Digest.new(:MD5)
-    Streaming::Reader.new(source) do |reader|
+  def self.digest(source, algo: :MD5, progress: false)
+    digest = Stream::Writer::Digest.new(algo)
+    # Need to change ZipFile to a filter instead of a source because it unzips
+    # Stream::Reader.new(source) do |reader|
+    Stream::Source::LocalFile.new(source) do |reader|
       reader.add_writer(digest)
       if progress
-        reader.add_writer(Streaming::Writer::Progress.new(title: 'md5 digest'))
+        reader.add_writer(Stream::Writer::Progress.new(title: 'finding digest'))
       end
     end
     digest.value
@@ -72,9 +74,9 @@ class FileHelper
     common_worker(source, target, progress_text: progress_text)
   end
 
-  def self.http_file_size(source)
+  def self.size(source)
     result = nil
-    Streaming::Reader.new(source) do |reader|
+    Stream::Reader.new(source) do |reader|
       result = reader.size
     end
     result

@@ -1,21 +1,21 @@
-module Streaming
+module Stream
   module Source
     #
-    # The real parent of the streaming sources even though they're all accessed
+    # The real parent of the Stream sources even though they're all accessed
     # through another class that's just pretending.
     #
     class BaseSource
       #
       # The optinal block passed in here allows this calling convention:
       #
-      # Streaming::Source::General.new(source) do |source|
-      #    source.add_writer(Streaming::Writer::LocalFile.new(target))
+      # Stream::Source::General.new(source) do |source|
+      #    source.add_writer(Stream::Writer::LocalFile.new(target))
       # end
       #
       # Otherwise it should be used like this:
       #
-      # source = Streaming::Source::General.new(source)
-      # source.add_writer(Streaming::Writer::LocalFile.new(target))
+      # source = Stream::Source::General.new(source)
+      # source.add_writer(Stream::Writer::LocalFile.new(target))
       # source.write
       # source.close
       #
@@ -35,7 +35,7 @@ module Streaming
       end
 
       def add_writer(writer)
-        writer.total = size if writer.is_a? Streaming::Writer::Progress
+        writer.total = size if writer.is_a? Stream::Writer::Progress
         @writers << writer
       end
 
@@ -44,7 +44,7 @@ module Streaming
         # the file and call some method on the source but not actually
         # slurp the file.
         return if @writers.empty?
-        chunk = Chunk.new(size: size)
+        chunk = Stream::Chunk.new(size: size)
         @writers.each(&:open)
         until chunk.finished?
           data = read(chunk.size)

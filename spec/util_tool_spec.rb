@@ -1,10 +1,11 @@
 require 'spec_helper'
-require File.expand_path('file_tool_wrapper', __dir__)
+require 'tmpdir'
+require File.expand_path('util_tool_wrapper', __dir__)
 
 # rubocop:disable Style/MutableConstant
-FILE_VM_DATA_JSON = File.expand_path('vm_data.json', __dir__)
-FILE_VM_DATA_ZIP = File.expand_path('vm_data.zip', __dir__)
-FILE_TMP_DUMMY_TXT = File.expand_path('..\tmp\dummy.txt', __dir__)
+FILE_VM_DATA_JSON = File.expand_path('test_data/vm_data.json', __dir__)
+FILE_VM_DATA_ZIP = File.expand_path('test_data/vm_data.zip', __dir__)
+FILE_TMP_DUMMY_TXT = File.expand_path('dummy.txt', Dir::tmpdir)
 
 URL_DOWNLOAD_DUMMY = 'https://www.iana.org/_img/2013.1/iana-logo-header.svg'
 URL_VM_FOR_MD5_CHECK = 'https://az792536.vo.msecnd.net/vms/md5/' \
@@ -32,10 +33,10 @@ def entry_value(output, name)
 end
 
 # rubocop:disable Metrics/BlockLength
-RSpec.describe 'FileTool', :slow do
-  let(:file) do
+RSpec.describe 'UtilTool', :slow do
+  let(:util) do
     ENV['VM_DATA'] = FILE_VM_DATA_JSON
-    FileToolWrapper.new
+    UtilToolWrapper.new
   end
 
   let(:dummy_source) do
@@ -46,23 +47,21 @@ RSpec.describe 'FileTool', :slow do
   end
 
   let(:download_dummy) do
-    url = URL_DOWNLOAD_DUMMY
-    basename = url.split('/').last
-    @created_download_dummy = File.expand_path("../tmp/download/#{basename}",
-                                               __dir__)
-    url
+    basename = File.basename(URL_DOWNLOAD_DUMMY)
+    @created_download_dummy = File.expand_path("download/#{basename}",
+                                               Dir::tmpdir)
+    URL_DOWNLOAD_DUMMY
   end
 
   let(:dummy_target) do
-    @created_dummy_target = File.expand_path('..\tmp\download\dummy_copy.txt',
-                                             __dir__)
+    @created_dummy_target = File.expand_path('download/dummy_copy.txt',
+                                             Dir::tmpdir)
   end
 
   let(:zipped_file) do
-    @zipped_file = File.expand_path('../tmp/vm_data.zip', __dir__)
-    @unzipped_file = File.expand_path('../tmp/vm_data/vm_data.json', __dir__)
-    @unzipped_dir = File.expand_path('../tmp/vm_data', __dir__)
-    FileUtils.mkdir_p(File.expand_path('../tmp', __dir__))
+    @zipped_file = File.expand_path('vm_data.zip', Dir::tmpdir)
+    @unzipped_dir = File.expand_path('vm_data', Dir::tmpdir)
+    @unzipped_file = File.expand_path('vm_data/vm_data.json', Dir::tmpdir)
     FileUtils.cp(FILE_VM_DATA_ZIP, @zipped_file)
     @zipped_file
   end
@@ -77,52 +76,52 @@ RSpec.describe 'FileTool', :slow do
 
   context '#copy' do
     it 'can copy a file' do
-      file.copy "#{dummy_source} #{dummy_target}"
-      expect(file.stderr).to eq('')
-      expect(file.status).to eq(0)
+      util.copy "#{dummy_source} #{dummy_target}"
+      expect(util.stderr).to eq('')
+      expect(util.status).to eq(0)
     end
 
     it 'fails when no source file' do
-      file.copy
-      expect(file.stderr).to match('no arguments')
+      util.copy
+      expect(util.stderr).to match('no arguments')
       # returns 0 because it's broken (again)
       # bug first reported by Mike Saffitz of all people:
       # https://github.com/erikhuda/thor/issues/244
-      # expect(file.status).to eq(1)
+      # expect(util.status).to eq(1)
     end
 
     it 'fails when no target file' do
-      file.copy dummy_source
-      expect(file.stderr).to match('was called with arguments')
-      # expect(file.status).to eq(1)
+      util.copy dummy_source
+      expect(util.stderr).to match('was called with arguments')
+      # expect(util.status).to eq(1)
     end
 
     it 'fails when more than two args' do
-      file.copy 'a b c'
-      expect(file.stderr).to match('was called with arguments')
-      # expect(file.status).to eq(1)
+      util.copy 'a b c'
+      expect(util.stderr).to match('was called with arguments')
+      # expect(util.status).to eq(1)
     end
   end
 
   context '#download' do
     it 'can download' do
-      file.download download_dummy
-      expect(file.stderr).to eq('')
-      expect(file.status).to eq(0)
+      util.download download_dummy
+      expect(util.stderr).to eq('')
+      expect(util.status).to eq(0)
     end
 
     it 'can download to a path' do
       dir = dummy_target.split(%r{/|\\})[0..-2].join('/')
-      file.download "#{download_dummy} -d #{dir}"
-      expect(file.stderr).to eq('')
-      expect(file.status).to eq(0)
+      util.download "#{download_dummy} -d #{dir}"
+      expect(util.stderr).to eq('')
+      expect(util.status).to eq(0)
     end
   end
 
   context '#find' do
     it 'with no args returns all items' do
-      file.find
-      expect(entry_count(file.stdout)).to eq(30)
+      util.find
+      expect(entry_count(util.stdout)).to eq(30)
     end
 
     it 'can find by browser' do
@@ -131,8 +130,8 @@ RSpec.describe 'FileTool', :slow do
       # of browsers of each version.
       # browsers = %w[IE8 IE9 IE10 IE11 MSEdge]
       # this_browser = browsers[rand(browsers.size)]
-      file.find '--browser IE10'
-      expect(entry_count(file.stdout)).to eq(5)
+      util.find '--browser IE10'
+      expect(entry_count(util.stdout)).to eq(5)
     end
 
     # currently can't but should be able to
@@ -140,8 +139,8 @@ RSpec.describe 'FileTool', :slow do
     end
 
     it 'can find by md5_url' do
-      file.find "--md5_url #{URL_VM_FOR_MD5_CHECK}"
-      expect(entry_value(file.stdout, 'md5')).to eq(MD5_FOR_MD5_CHECK)
+      util.find "--md5_url #{URL_VM_FOR_MD5_CHECK}"
+      expect(entry_value(util.stdout, 'md5')).to eq(MD5_FOR_MD5_CHECK)
     end
 
     xit 'can find by name' do
@@ -165,11 +164,11 @@ RSpec.describe 'FileTool', :slow do
 
   context '#md5' do
     it 'can find an md5' do
-      file.download download_dummy
-      file.md5 @created_download_dummy
-      expect(file.stderr).to eq('')
-      expect(file.stdout).to match('426B3AC01D3584C820F3B7F5985D6623')
-      expect(file.status).to eq(0)
+      util.download download_dummy
+      util.md5 @created_download_dummy
+      expect(util.stderr).to eq('')
+      expect(util.stdout).to match('426B3AC01D3584C820F3B7F5985D6623')
+      expect(util.status).to eq(0)
     end
 
     xit 'can verify md5 against data' do
@@ -178,16 +177,16 @@ RSpec.describe 'FileTool', :slow do
 
   context '#unzip' do
     it 'can unzip a file' do
-      file.unzip zipped_file
-      expect(file.stderr).to eq('')
+      util.unzip zipped_file
+      expect(util.stderr).to eq('')
       expect(FileUtils.identical?(@unzipped_file, FILE_VM_DATA_JSON)).to be true
     end
   end
 
   context '#values' do
     it 'can query all browsers' do
-      file.values 'browser'
-      expect(file.stdout.lines.count).to eq(5)
+      util.values 'browser'
+      expect(util.stdout.lines.count).to eq(5)
     end
 
     xit 'can query all of the other things and be correct' do

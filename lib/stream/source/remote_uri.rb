@@ -3,7 +3,7 @@ require 'source/base_source'
 $LOAD_PATH.unshift(File.expand_path('../lib'), __dir__)
 require 'utils'
 
-module Streaming
+module Stream
   module Source
     #
     # Reads remote file over http.

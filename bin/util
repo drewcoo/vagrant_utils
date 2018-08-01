@@ -1,0 +1,71 @@
+#!/usr/bin/env ruby
+$LOAD_PATH.unshift(File.expand_path('../lib', __dir__))
+require 'stream'
+require 'vagrant_utils/modern.ie/collection'
+
+#
+# A command line tool to deal with vagrant files.
+# This inherits some file funtionality from the stream tool.
+#
+class UtilTool < StreamTool
+  desc 'data_puts_list', 'outputs list of vm data elements', hide: true
+  def data_puts_list(list)
+    list.each_index do |index|
+      puts unless index.zero?
+      puts list[index].dump
+    end
+  end
+
+  desc 'find', 'take a bunch of args or none at all'
+  method_option :browser
+  # method_option :md5 # currently not an option because of having to fetch
+  # all md5s from server and some missing. Should fix this!
+  method_option :md5_url
+  method_option :name
+  method_option :os
+  method_option :url
+  method_option :verbose_sku
+  method_option :verbose_vm
+  method_option :vm
+  def find
+    result = vm_data.find(options)
+    data_puts_list result
+  end
+
+  desc 'md5', 'hash of file'
+  method_option :verify, aliases: '-v', desc: 'check against md5s in vm data',
+                         type: :boolean
+  def md5(source)
+    actual = super
+    return actual unless options.verify
+    matches = vm_data.find(name: File.basename(source))
+    unless matches.size == 1
+      Assert.bail! "#{matches.size} entries in data matching #{source}"
+    end
+    expected = matches.first.md5
+    Assert.equal(actual, expected)
+  end
+
+  desc 'values', 'all types for field name'
+  # values for field - one of:
+  # browser, md5, md5_url, name, os, url, verbose_sku,
+  # verbose_vm, vm
+  def values(field)
+    result = vm_data.values(field)
+    puts result
+  end
+
+  desc 'MSFT VM data', 'web-fetches as needed', hide: true
+  def vm_data
+    # This is intended for testing only so I'm not promoting it to a
+    # regular option.
+    my_options = { type: Image }
+    my_options[:data] = ENV['VM_DATA'] if ENV['VM_DATA']
+    # Do not do this:
+    # Assert.exist(Image.default_data)
+    # Because MSFT's json returns Net::HTTPMovedPermanently on HEAD.
+    @vm_data ||= Collection.new(my_options)
+  end
+end
+
+UtilTool.start

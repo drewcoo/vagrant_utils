@@ -1,4 +1,4 @@
-FILE_TOOL_PATH = File.expand_path('../bin/file.rb', __dir__)
+UTIL_TOOL_PATH = File.expand_path('../bin/util', __dir__)
 
 require 'open3'
 
@@ -6,12 +6,12 @@ require 'open3'
 # A class to wrap scc.rb for test purposes.
 # It does ugly things.
 #
-class FileToolWrapper
+class UtilToolWrapper
   attr_accessor :stdout, :stderr, :status
 
   def call(string)
     @stdout = @stderr = ''
-    command = "ruby #{FILE_TOOL_PATH} #{string}"
+    command = "ruby #{UTIL_TOOL_PATH} #{string}"
     @stdout, @stderr, @status = Open3.capture3(command)
   end
 

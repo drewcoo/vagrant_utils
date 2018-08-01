@@ -1,4 +1,4 @@
-module Streaming
+module Stream
   module Writer
     #
     # I thought this would do more. Maybe not.

@@ -1,6 +1,6 @@
 require 'writer/base'
 
-module Streaming
+module Stream
   module Writer
     #
     # Writes to a local file.

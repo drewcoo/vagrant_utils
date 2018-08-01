@@ -2,12 +2,12 @@ require 'source/local_file'
 require 'source/remote_uri'
 require 'source/zip_file'
 
-module Streaming
+module Stream
   #
   # Should make this handle zipfiles, too.
   # From local files or http.
   #
-  # This seems to be the parent class for the streaming sources but actually
+  # This seems to be the parent class for the Stream sources but actually
   # only pretends and introduces them. See BiologicalParent.
   #
   # Handles local zipfiles. Not zipfles over http.
@@ -17,12 +17,12 @@ module Streaming
     def initialize(name, &block)
       @instance = case uri = URI(name.tr('\\', '/'))
                   when URI::HTTP
-                    Streaming::Source::RemoteURI.new(uri, &block)
+                    Stream::Source::RemoteURI.new(uri, &block)
                   when URI::Generic
                     if name.match?(/\.zip$/)
-                      Streaming::Source::ZipFile.new(name, &block)
+                      Stream::Source::ZipFile.new(name, &block)
                     else
-                      Streaming::Source::LocalFile.new(name, &block)
+                      Stream::Source::LocalFile.new(name, &block)
                     end
                   else
                     raise "file \"#{name}\" is unknown type #{uri.class}"

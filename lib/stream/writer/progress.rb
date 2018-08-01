@@ -1,7 +1,7 @@
 require 'progressbar'
 require 'writer/base'
 
-module Streaming
+module Stream
   module Writer
     #
     # Shows progress for file operations.
